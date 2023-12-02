@@ -89,10 +89,26 @@ def notify_rank_changes(prev_top_20, new_top_20):
     prev_top_20_dict = dict(prev_top_20)
     new_top_20_dict = dict(new_top_20)
 
+    # Check for users that were in the previous top 20 but not in the new top 20
     for user_id, prev_position in prev_top_20:
         new_position = new_top_20_dict.get(user_id)
+        
         if new_position and new_position != prev_position:
             notify_user_position_change(user_id, prev_position, new_position)
+            
+    # Check for users that were in the previous top 20 but not in the new top 20
+    for user_id, prev_position in prev_top_20:
+        if user_id not in new_top_20_dict:
+            notify_user_removed_from_top_20(user_id)
+
+def notify_user_removed_from_top_20(user_id):
+    """
+    Notify the user about their removal from the top 20 overall rank.
+    """
+    user = User.query.get(user_id)
+    if user:
+        notification_message = f"Hey {user.username}, you've been removed from the top 20 overall rank and now positioned as 21."
+        send_notification(user_id, notification_message)
 
 def notify_user_position_change(user_id, prev_position, new_position):
     """
@@ -102,9 +118,20 @@ def notify_user_position_change(user_id, prev_position, new_position):
     if user:
         notification_message = f"Hey {user.username}, your position changed from {prev_position} to {new_position} in the top 20 overall rank!"
        
-       # send_notification(user_id, notification_message)
+        send_notification(user_id, notification_message)
 
 def send_notification(user_id, message):
    
    
     print(f"Sending notification to User ID {user_id}: {message}")
+
+
+def get_user_overall_rank_and_position(user_id):
+    user = User.query.get(user_id)
+    if user:
+        overall_rank = user.overall_rank
+        top_20_positions = get_top_20_users_overall_rank()  
+        user_position = next((pos for pos, (uid, _) in enumerate(top_20_positions, start=1) if uid == user_id), None)
+        return overall_rank, user_position
+    else:
+        return None, None
